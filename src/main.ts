@@ -4,10 +4,10 @@ import { NestFactory } from '@nestjs/core';
 import { RedisStore } from 'connect-redis';
 import * as cookieParser from 'cookie-parser';
 import * as session from 'express-session';
-import IORedis from 'ioredis';
+import { createClient } from 'redis';
 
-import { parseBoolean } from '@/utils/parseBoolean';
-import { ms, StringValue } from '@/utils/timeToMs';
+import { parseBooleanUtils } from '@/utils/parse-boolean.utils';
+import { ms, StringValue } from '@/utils/time-to-ms.utils';
 
 import { AppModule } from './app.module';
 
@@ -15,9 +15,10 @@ async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
 
 	const config = app.get(ConfigService);
-	const redis = new IORedis(config.getOrThrow<string>('COOKIES_SECRET'));
+	const redis = createClient({ url: config.getOrThrow<string>('REDIS_URI') });
+	await redis.connect();
 
-	app.use(cookieParser(config.getOrThrow('COOKIES_SECRET')));
+	app.use(cookieParser(config.getOrThrow<string>('COOKIES_SECRET')));
 	app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
 	app.use(
@@ -29,8 +30,8 @@ async function bootstrap() {
 			cookie: {
 				domain: config.getOrThrow<string>('SESSION_DOMAIN'),
 				maxAge: ms(config.getOrThrow<StringValue>('SESSION_MAX_AGE')),
-				httpOnly: parseBoolean(config.getOrThrow<string>('SESSION_HTTP_ONLY')),
-				secure: parseBoolean(config.getOrThrow<string>('SESSION_SECURE')),
+				httpOnly: parseBooleanUtils(config.getOrThrow<string>('SESSION_HTTP_ONLY')),
+				secure: parseBooleanUtils(config.getOrThrow<string>('SESSION_SECURE')),
 				sameSite: 'lax',
 			},
 			store: new RedisStore({
