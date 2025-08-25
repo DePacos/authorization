@@ -12,11 +12,10 @@ export class UpdateUserDto {
 	@IsValidPassword()
 	password?: string;
 
-	@ValidateIf((o: UpdateUserDto) => !o.password)
+	@ValidateIf((user: UpdateUserDto) => !user.password)
 	@Validate(IsPasswordMatching)
 	passwordRepeat?: string;
 
-	@IsOptional()
 	@IsBoolean()
-	isTwoFactorEnable?: boolean;
+	isTwoFactorEnable: boolean;
 }
