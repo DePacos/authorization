@@ -3,7 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { $Enums } from '@prisma/__generated__';
 import { Request } from 'express';
 
-import { ROLES_KEY } from '@/constant/app.constant';
+import { ROLES_KEY } from '@/constants/app.constant';
 
 import UserRole = $Enums.UserRole;
 
