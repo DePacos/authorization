@@ -1,6 +1,6 @@
 import { IsNotEmpty, MaxLength } from 'class-validator';
 
-import { IsValidEmail } from '@/decorator/validation.decorator';
+import { IsValidEmail } from '@/decorators/validation.decorator';
 
 export class LoginDto {
 	@IsValidEmail()
