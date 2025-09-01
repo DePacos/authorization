@@ -101,22 +101,22 @@ export class OAuthService {
 		};
 	}
 
-	protected getJWTKey(encoding = ENCRYPTION_ALG.BASE64URL) {
+	private getJWTKey(encoding = ENCRYPTION_ALG.BASE64URL) {
 		const authStateSecret = this.configService.getOrThrow<string>('AUTH_STATE_SECRET');
 		return createSecretKey(authStateSecret, encoding);
 	}
 
-	public generateCodeVerifier(length = ENCRYPTION_ALG.LENGTH64, encoding = ENCRYPTION_ALG.BASE64URL) {
+	private generateCodeVerifier(length = ENCRYPTION_ALG.LENGTH64, encoding = ENCRYPTION_ALG.BASE64URL) {
 		return randomBytes(length).toString(encoding);
 	}
 
-	public generateCodeChallenge(verifier: string, alg = ENCRYPTION_ALG.SHA256, encoding = ENCRYPTION_ALG.BASE64URL) {
+	private generateCodeChallenge(verifier: string, alg = ENCRYPTION_ALG.SHA256, encoding = ENCRYPTION_ALG.BASE64URL) {
 		const hash = createHash(alg).update(verifier).digest();
 
 		return Buffer.from(hash).toString(encoding);
 	}
 
-	public async generateState(payload: { verifier: string }) {
+	private async generateState(payload: { verifier: string }) {
 		const key = this.getJWTKey();
 
 		return await new EncryptJWT(payload)
@@ -124,7 +124,7 @@ export class OAuthService {
 			.encrypt(key);
 	}
 
-	async parseState(state: string) {
+	public async parseState(state: string) {
 		const key = this.getJWTKey();
 		const { payload } = await jwtDecrypt(state, key);
 
@@ -143,7 +143,7 @@ export class OAuthService {
 		this.BASE_URL = value;
 	}
 
-	public setConfigService(configService: ConfigService) {
+	set setConfigService(configService: ConfigService) {
 		this.configService = configService;
 	}
 }
