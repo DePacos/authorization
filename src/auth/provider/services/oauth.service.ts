@@ -1,10 +1,9 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { EncryptJWT, jwtDecrypt } from 'jose';
-import { createHash, createSecretKey, randomBytes } from 'node:crypto';
 
 import { OAuthResponse } from '@/auth/provider/types/oauth-response.types';
 import { UserInfo } from '@/auth/provider/types/user-info.types';
+import { TokensService } from '@/auth/tokens/tokens.service';
 import { ENCRYPTION_ALG, ROUTES } from '@/constants/app.constant';
 
 import { Provider } from '../types/provider.types';
@@ -12,7 +11,7 @@ import { Provider } from '../types/provider.types';
 @Injectable()
 export class OAuthService {
 	private BASE_URL: string;
-	private configService: ConfigService;
+	private tokenService: TokensService;
 
 	public constructor(private readonly options: Provider) {}
 
@@ -29,9 +28,9 @@ export class OAuthService {
 	}
 
 	public async getAuthUrl() {
-		const verifier = this.generateCodeVerifier();
+		const verifier = this.tokenService.generateRandomBytes();
 		const state = await this.generateState({ verifier });
-		const code_challenge = this.generateCodeChallenge(verifier);
+		const code_challenge = this.tokenService.generateHash(verifier);
 
 		const query = new URLSearchParams({
 			response_type: 'code',
@@ -44,7 +43,7 @@ export class OAuthService {
 			code_challenge_method: ENCRYPTION_ALG.S256,
 		});
 
-		return { url: `${this.options.authorizeUrl}?${query}`, state, verifier };
+		return { url: `${this.options.authorizeUrl}?${query}` };
 	}
 
 	public async getUserByCode(code: string, code_verifier: string): Promise<UserInfo> {
@@ -101,23 +100,8 @@ export class OAuthService {
 		};
 	}
 
-	private getJWTKey(encoding = ENCRYPTION_ALG.BASE64URL) {
-		const authStateSecret = this.configService.getOrThrow<string>('AUTH_STATE_SECRET');
-		return createSecretKey(authStateSecret, encoding);
-	}
-
-	private generateCodeVerifier(length = ENCRYPTION_ALG.LENGTH64, encoding = ENCRYPTION_ALG.BASE64URL) {
-		return randomBytes(length).toString(encoding);
-	}
-
-	private generateCodeChallenge(verifier: string, alg = ENCRYPTION_ALG.SHA256, encoding = ENCRYPTION_ALG.BASE64URL) {
-		const hash = createHash(alg).update(verifier).digest();
-
-		return Buffer.from(hash).toString(encoding);
-	}
-
 	private async generateState(payload: { verifier: string }) {
-		const key = this.getJWTKey();
+		const key = this.tokenService.getSecretKey();
 
 		return await new EncryptJWT(payload)
 			.setProtectedHeader({ alg: ENCRYPTION_ALG.DIR, enc: ENCRYPTION_ALG.A256GCM })
@@ -125,7 +109,7 @@ export class OAuthService {
 	}
 
 	public async parseState(state: string) {
-		const key = this.getJWTKey();
+		const key = this.tokenService.getSecretKey();
 		const { payload } = await jwtDecrypt(state, key);
 
 		return payload as { verifier: string };
@@ -143,7 +127,7 @@ export class OAuthService {
 		this.BASE_URL = value;
 	}
 
-	set setConfigService(configService: ConfigService) {
-		this.configService = configService;
+	set setTokenService(tokenService: TokensService) {
+		this.tokenService = tokenService;
 	}
 }
