@@ -56,7 +56,7 @@ export class OAuthService {
 			code,
 			redirect_uri: this.getRedirectUrl(),
 			grant_type: 'authorization_code',
-			code_verifier: code_verifier,
+			code_verifier,
 		});
 
 		const tokenRequest = await fetch(this.options.accessUrl, {
@@ -110,9 +110,14 @@ export class OAuthService {
 
 	public async parseState(state: string) {
 		const key = this.tokenService.getSecretKey();
-		const { payload } = await jwtDecrypt(state, key);
 
-		return payload as { verifier: string };
+		try {
+			const { payload } = await jwtDecrypt(state, key);
+
+			return payload as { verifier: string };
+		} catch {
+			throw new UnauthorizedException('invalid state payload');
+		}
 	}
 
 	public getRedirectUrl() {

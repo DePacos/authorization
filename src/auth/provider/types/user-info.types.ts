@@ -5,8 +5,8 @@ export type UserInfo = {
 	name: string;
 	email: string;
 	picture: string;
-	accessToken?: string | null;
-	refreshToken?: string;
-	expiresAt?: number;
+	access_token?: string | null;
+	refresh_token?: string;
+	expires_at?: number;
 	provider: AuthProvider;
 };

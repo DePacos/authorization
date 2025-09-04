@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Tokens } from '@prisma/__generated__';
 import * as argon2 from 'argon2';
 import { jwtVerify, SignJWT } from 'jose';
 import { createHash, createSecretKey, randomBytes, randomUUID } from 'node:crypto';
@@ -32,11 +33,12 @@ export class TokensService {
 	public async getAccessToken(userId: string) {
 		const key = this.getSecretKey();
 		const accessTtl = this.configService.getOrThrow<StringValue>('TOKEN_ACCESS_TTL');
+		const now = Date.now();
 
-		const accessToken = await new SignJWT({ sub: userId })
+		const accessToken = await new SignJWT({ userId })
 			.setProtectedHeader({ alg: ENCRYPTION_ALG.HS256 })
-			.setIssuedAt()
-			.setExpirationTime(accessTtl)
+			.setIssuedAt(now)
+			.setExpirationTime(now + ms(accessTtl))
 			.sign(key);
 
 		return { accessToken };
@@ -46,17 +48,30 @@ export class TokensService {
 		const key = this.getSecretKey();
 		const refreshJti = randomUUID();
 		const refreshTtl = this.configService.getOrThrow<StringValue>('TOKEN_REFRESH_TTL');
+		const now = Date.now();
+		const refreshExpires = now + ms(refreshTtl);
 
-		const refreshToken = await new SignJWT({ sub: userId })
+		const refreshToken = await new SignJWT({ userId })
 			.setProtectedHeader({ alg: ENCRYPTION_ALG.HS256 })
 			.setJti(refreshJti)
-			.setIssuedAt()
-			.setExpirationTime(refreshTtl)
+			.setIssuedAt(now)
+			.setExpirationTime(refreshExpires)
 			.sign(key);
 
-		const refreshExpires = Date.now() + ms(refreshTtl);
-
 		return { refreshToken, refreshJti, refreshExpires };
+	}
+
+	public async getTokenPayload(token: string) {
+		const key = this.getSecretKey();
+
+		try {
+			const { payload } = await jwtVerify(token, key);
+			if (!payload.exp || !payload.userId) throw new UnauthorizedException('Invalid payload');
+
+			return { userId: payload.userId, exp: payload.exp, jti: payload.jti };
+		} catch {
+			throw new UnauthorizedException('Invalid token');
+		}
 	}
 
 	public async saveToken(userId: string, email: string, data: SaveTokenData) {
@@ -82,18 +97,7 @@ export class TokensService {
 		});
 	}
 
-	public async removeToken(token: string) {
-		const key = this.getSecretKey();
-		const { payload } = await jwtVerify(token, key);
-		const jti = payload.jti;
-
-		if (!payload.jti) throw new UnauthorizedException('token has no jti');
-
-		const foundRow = await this.prismaService.token.findUnique({ where: { jti } });
-		if (!foundRow) throw new UnauthorizedException('invalid token');
-
-		if (!(await argon2.verify(foundRow.token, token))) throw new UnauthorizedException('invalid token');
-
-		await this.prismaService.token.delete({ where: { jti } });
+	public async removeToken(userId: string, tokenType: Tokens) {
+		await this.prismaService.token.delete({ where: { user_type_unique: { userId, type: tokenType } } });
 	}
 }
