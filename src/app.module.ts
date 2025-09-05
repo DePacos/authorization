@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
+import { AuthModule } from '@/auth/auth.module';
 import { PrismaModule } from '@/prisma/prisma.module';
+import { UserModule } from '@/user/user.module';
 import { IS_DEV_ENV } from '@/utils/is-dev.utils';
 
 @Module({
@@ -10,7 +12,9 @@ import { IS_DEV_ENV } from '@/utils/is-dev.utils';
 			isGlobal: true,
 			ignoreEnvFile: !IS_DEV_ENV,
 		}),
+		AuthModule,
 		PrismaModule,
+		UserModule,
 	],
 })
 export class AppModule {}
