@@ -59,7 +59,7 @@ export class OAuthService {
 			code_verifier,
 		});
 
-		const tokenRequest = await fetch(this.options.accessUrl, {
+		const tokenResponseRaw = await fetch(this.options.accessUrl, {
 			method: 'POST',
 			body: tokenQuery,
 			headers: {
@@ -68,9 +68,9 @@ export class OAuthService {
 			},
 		});
 
-		const tokenResponse = (await tokenRequest.json()) as UserInfo;
+		const tokenResponse = (await tokenResponseRaw.json()) as UserInfo;
 
-		if (!tokenRequest.ok) {
+		if (!tokenResponseRaw.ok) {
 			throw new BadRequestException('invalid request token');
 		}
 
@@ -93,6 +93,7 @@ export class OAuthService {
 
 		return {
 			...userData,
+			id: user.sub || '',
 			access_token: tokenResponse.access_token,
 			refresh_token: tokenResponse.refresh_token,
 			expires_at: tokenResponse.expires_at,

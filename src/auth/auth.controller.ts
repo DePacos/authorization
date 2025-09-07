@@ -1,7 +1,6 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { Recaptcha } from '@nestlab/google-recaptcha';
 import { User } from '@prisma/__generated__';
-import { plainToInstance } from 'class-transformer';
 import { Request, Response } from 'express';
 
 import { AuthService } from '@/auth/auth.service';
@@ -13,6 +12,7 @@ import { ROUTS_PATH } from '@/constants/routes.constant';
 import { Authorization } from '@/decorators/auth.decorator';
 import { Authorized } from '@/decorators/authorized.decorator';
 import { AuthProviderGuard } from '@/guards/auth-provider.guard';
+import { AuthUpdateGuard } from '@/guards/auth-update.guard';
 
 @Controller(ROUTS_PATH.AUTH.ROOT)
 export class AuthController {
@@ -38,23 +38,22 @@ export class AuthController {
 	@Authorization()
 	@Post(ROUTS_PATH.AUTH.LOGOUT)
 	@HttpCode(HttpStatus.NO_CONTENT)
-	async logout(@Req() req: Request) {
-		await this.authService.logout(req);
+	async logout(@Authorized() user: User, @Res({ passthrough: true }) res: Response) {
+		await this.authService.logout(user, res);
 	}
 
 	@Authorization()
 	@Get(ROUTS_PATH.AUTH.ME)
 	@HttpCode(HttpStatus.OK)
-	me(@Authorized() user: User) {
-		return plainToInstance(MeResponseDto, user, {
-			excludeExtraneousValues: true,
-		});
+	me(@Authorized(MeResponseDto) user: User) {
+		return user;
 	}
 
+	@UseGuards(AuthUpdateGuard)
 	@Post(ROUTS_PATH.AUTH.UPDATE)
 	@HttpCode(HttpStatus.OK)
 	async update(@Authorized() user: User, @Res({ passthrough: true }) res: Response) {
-		await this.authService.update(user, res);
+		return await this.authService.update(user, res);
 	}
 
 	@UseGuards(AuthProviderGuard)
