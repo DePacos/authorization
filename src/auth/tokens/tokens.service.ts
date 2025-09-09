@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Tokens } from '@prisma/__generated__';
 import * as argon2 from 'argon2';
@@ -30,15 +30,22 @@ export class TokensService {
 		return createHash(alg).update(value).digest().toString(encoding);
 	}
 
+	public async getTokenByJti(jti: string) {
+		return this.prismaService.token.findUnique({ where: { jti } });
+	}
+
+	public async getTokenByUserIdAndType(userId: string, tokenType: Tokens) {
+		return this.prismaService.token.findUnique({ where: { user_type_unique: { userId, type: tokenType } } });
+	}
+
 	public async getAccessToken(userId: string) {
 		const key = this.getSecretKey();
 		const accessTtl = this.configService.getOrThrow<StringValue>('TOKEN_ACCESS_TTL');
-		const now = Date.now();
 
 		const accessToken = await new SignJWT({ userId })
 			.setProtectedHeader({ alg: ENCRYPTION_ALG.HS256 })
-			.setIssuedAt(now)
-			.setExpirationTime(now + ms(accessTtl))
+			.setIssuedAt()
+			.setExpirationTime(accessTtl)
 			.sign(key);
 
 		return { accessToken };
@@ -48,42 +55,69 @@ export class TokensService {
 		const key = this.getSecretKey();
 		const refreshJti = randomUUID();
 		const refreshTtl = this.configService.getOrThrow<StringValue>('TOKEN_REFRESH_TTL');
-		const now = Date.now();
-		const refreshExpires = now + ms(refreshTtl);
+		const refreshTtlMs = ms(refreshTtl);
 
 		const refreshToken = await new SignJWT({ userId })
 			.setProtectedHeader({ alg: ENCRYPTION_ALG.HS256 })
 			.setJti(refreshJti)
-			.setIssuedAt(now)
-			.setExpirationTime(refreshExpires)
+			.setIssuedAt()
+			.setExpirationTime(refreshTtl)
 			.sign(key);
 
-		return { refreshToken, refreshJti, refreshExpires };
+		return { refreshToken, refreshJti, refreshTtlMs };
 	}
 
-	public async getTokenPayload(token: string) {
+	public getVerifyToken() {
+		const verifier = this.generateRandomBytes();
+		const verifierJti = randomUUID();
+		const verifierTtl = ms(this.configService.getOrThrow<StringValue>('TOKEN_VERIFY_TTL'));
+
+		return { verifier, verifierJti, verifierTtl };
+	}
+
+	public async verifyAccessToken(token: string) {
 		const key = this.getSecretKey();
 
 		try {
-			const { payload } = await jwtVerify(token, key);
-			if (!payload.exp || !payload.userId) throw new UnauthorizedException('Invalid payload');
+			const { payload } = await jwtVerify(token, key, { clockTolerance: '5s' });
+			if (!payload?.userId) throw new UnauthorizedException('token payload invalid');
 
-			return { userId: payload.userId, exp: payload.exp, jti: payload.jti };
+			return { userId: payload.userId };
 		} catch {
-			throw new UnauthorizedException('Invalid token');
+			throw new UnauthorizedException('accessToken invalid');
+		}
+	}
+
+	public async verifyRefreshToken(token: string) {
+		const key = this.getSecretKey();
+
+		try {
+			const { payload } = await jwtVerify(token, key, { clockTolerance: '5s' });
+			if (!payload?.userId || !payload?.jti) throw new UnauthorizedException('token payload invalid');
+
+			const foundToken = await this.getTokenByJti(payload.jti);
+			if (foundToken?.type !== Tokens.REFRESH) throw new UnauthorizedException('no token');
+
+			if (foundToken?.token && !(await argon2.verify(foundToken.token, token)))
+				throw new ConflictException('token invalid');
+
+			return { userId: payload.userId, jti: payload?.jti };
+		} catch {
+			throw new UnauthorizedException('token invalid');
 		}
 	}
 
 	public async saveToken(userId: string, email: string, data: SaveTokenData) {
 		const { token, tokenType: type, tokenJti: jti, tokenExpires } = data;
 		const tokenHash = await argon2.hash(token);
+		const expiresAt = new Date(tokenExpires + Date.now());
 
 		await this.prismaService.token.upsert({
 			where: { user_type_unique: { userId, type } },
 			update: {
 				token: tokenHash,
 				type,
-				expiresAt: new Date(tokenExpires),
+				expiresAt,
 				jti,
 			},
 			create: {
@@ -91,13 +125,18 @@ export class TokensService {
 				email,
 				token: tokenHash,
 				type,
-				expiresAt: new Date(tokenExpires),
+				expiresAt,
 				jti,
 			},
 		});
 	}
 
-	public async removeToken(userId: string, tokenType: Tokens) {
-		await this.prismaService.token.delete({ where: { user_type_unique: { userId, type: tokenType } } });
+	public async removeToken(jti: string) {
+		const token = await this.prismaService.token.findUnique({
+			where: { jti },
+		});
+		if (!token) throw new NotFoundException('token not found');
+
+		await this.prismaService.token.delete({ where: { jti } });
 	}
 }
