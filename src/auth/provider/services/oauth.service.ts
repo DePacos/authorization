@@ -4,7 +4,8 @@ import { EncryptJWT, jwtDecrypt } from 'jose';
 import { OAuthResponse } from '@/auth/provider/types/oauth-response.types';
 import { UserInfo } from '@/auth/provider/types/user-info.types';
 import { TokensService } from '@/auth/tokens/tokens.service';
-import { ENCRYPTION_ALG, ROUTES } from '@/constants/app.constant';
+import { ENCRYPTION_ALG } from '@/constants/app.constant';
+import { ROUTS_PATH } from '@/constants/routes.constant';
 
 import { Provider } from '../types/provider.types';
 
@@ -122,7 +123,7 @@ export class OAuthService {
 	}
 
 	public getRedirectUrl() {
-		return this.BASE_URL + ROUTES.PROVIDER_CALLBACK + this.options.name.toLowerCase();
+		return this.BASE_URL + ROUTS_PATH.PROVIDER.CALLBACK + this.options.name.toLowerCase();
 	}
 
 	get name() {

@@ -5,7 +5,7 @@ import { TokensService } from '@/auth/tokens/tokens.service';
 import { UserService } from '@/user/user.service';
 
 @Injectable()
-export class AuthGuard implements CanActivate {
+export class AuthUpdateGuard implements CanActivate {
 	public constructor(
 		private readonly userService: UserService,
 		private readonly tokenService: TokensService,
@@ -14,11 +14,11 @@ export class AuthGuard implements CanActivate {
 	public async canActivate(context: ExecutionContext): Promise<boolean> {
 		const request: Request = context.switchToHttp().getRequest();
 
-		const token = request.headers.authorization?.startsWith('Bearer ') && request.headers.authorization.slice(7);
-		if (!token) throw new BadRequestException('token not found');
+		const token = request.cookies?.refreshToken as string | undefined;
+		if (!token) throw new BadRequestException('token invalid');
 
-		const { userId } = await this.tokenService.verifyAccessToken(token);
-		const user = await this.userService.getUserById(userId as string);
+		const { foundToken } = await this.tokenService.verifyRefreshToken(token);
+		const user = await this.userService.getUserById(foundToken.userId);
 		if (!user) throw new NotFoundException('user not found');
 
 		request.user = user;

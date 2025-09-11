@@ -1,7 +1,8 @@
 import { DynamicModule, Module } from '@nestjs/common';
 
 import { AuthService } from '@/auth/auth.service';
-import { EmailConfirmationService } from '@/auth/link-generation/email-confirmation.service';
+import { EmailConfirmationService } from '@/auth/email-confirmation/email-confirmation.service';
+import { ProviderController } from '@/auth/provider/provider.controller';
 import { ProviderService } from '@/auth/provider/provider.service';
 import { AsyncOptions, Options, ProviderOptionsSymbol } from '@/auth/provider/types/provider-options.types';
 import { TokensService } from '@/auth/tokens/tokens.service';
@@ -21,6 +22,7 @@ export class ProviderModule {
 				},
 				ProviderService,
 			],
+			controllers: [ProviderController],
 			exports: [ProviderService],
 		};
 	}
@@ -29,6 +31,7 @@ export class ProviderModule {
 		return {
 			module: ProviderModule,
 			imports: options.imports,
+			controllers: [ProviderController],
 			providers: [
 				{
 					useFactory: options.useFactory,

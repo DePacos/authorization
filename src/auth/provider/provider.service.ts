@@ -41,20 +41,20 @@ export class ProviderService implements OnModuleInit {
 		const { verifier } = await providerInstance.parseState(state);
 		const providerProfile = await providerInstance?.getUserByCode(code, verifier);
 
-		const foundUser = await this.userService.findByEmail(providerProfile.email);
+		const foundUser = await this.userService.getUserByEmail(providerProfile.email);
 		const account = foundUser?.account.find((acc) => acc.provider === providerInstance.name);
 
 		if (foundUser && !account) await this.userService.createAccountByProvider(foundUser.id, providerInstance.name);
 		const user = foundUser ? foundUser : await this.userService.createUserByProvider(providerProfile);
 
 		const { accessToken } = await this.tokenService.getAccessToken(user.id);
-		const { refreshToken, refreshJti, refreshTtlMs } = await this.tokenService.getRefreshTokens(user.id);
+		const { refreshToken, refreshJti, refreshTtl } = await this.tokenService.getRefreshTokens(user.id);
 
 		const tokenData: SaveTokenData = {
 			token: refreshToken,
 			tokenType: Tokens.REFRESH,
 			tokenJti: refreshJti,
-			tokenExpires: refreshTtlMs,
+			tokenTtl: refreshTtl,
 		};
 
 		await this.tokenService.saveToken(user.id, user.email, tokenData);
