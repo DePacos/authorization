@@ -10,14 +10,14 @@ import { UpdateUserDto } from '@/user/dto/update-user.dto';
 @Injectable()
 export class UserService {
 	public constructor(private readonly prismaService: PrismaService) {}
-	public async findById(id: string) {
+	public async getUserById(id: string) {
 		return this.prismaService.user.findUnique({
 			where: { id },
 			include: { account: true },
 		});
 	}
 
-	public async findByEmail(email: string) {
+	public async getUserByEmail(email: string) {
 		return this.prismaService.user.findUnique({
 			where: { email },
 			include: { account: true },
@@ -27,7 +27,7 @@ export class UserService {
 	public async createUser(data: Omit<RegisterDto, 'passwordRepeat'>) {
 		const { name, email, password } = data;
 
-		await this.prismaService.user.create({
+		return this.prismaService.user.create({
 			data: {
 				name,
 				email,
@@ -79,7 +79,21 @@ export class UserService {
 			select: {
 				id: true,
 				name: true,
+				email: true,
+				role: true,
 			},
+		});
+	}
+
+	public async verifyUser(id: string) {
+		await this.prismaService.user.update({ where: { id }, data: { isVerified: true } });
+	}
+
+	public async changePassword(id: string, newPassword: string) {
+		const passwordHash = await argon2.hash(newPassword);
+		await this.prismaService.user.update({
+			where: { id },
+			data: { password: passwordHash },
 		});
 	}
 }

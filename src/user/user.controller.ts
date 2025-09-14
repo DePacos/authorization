@@ -4,6 +4,7 @@ import { User } from '@prisma/__generated__';
 import { Authorization } from '@/decorators/auth.decorator';
 import { Authorized } from '@/decorators/authorized.decorator';
 import { ProfileResponseDto } from '@/user/dto/profile-response.dto';
+import { UpdateUserResponseDto } from '@/user/dto/update-user-response.dto';
 import { UpdateUserDto } from '@/user/dto/update-user.dto';
 import { UserService } from '@/user/user.service';
 
@@ -14,14 +15,14 @@ export class UserController {
 	@Authorization()
 	@Get('profile')
 	@HttpCode(HttpStatus.OK)
-	getUserById(@Authorized<ProfileResponseDto>() user: User) {
+	getUserById(@Authorized(ProfileResponseDto) user: User) {
 		return user;
 	}
 
 	@Authorization()
 	@Patch(':id')
 	@HttpCode(HttpStatus.OK)
-	async updateUser(@Param() userId: string, @Body() data: UpdateUserDto) {
-		return await this.userService.updateUser(userId, data);
+	async updateUser(@Param() param: { userId: string }, @Body() data: UpdateUserDto): Promise<UpdateUserResponseDto> {
+		return await this.userService.updateUser(param.userId, data);
 	}
 }

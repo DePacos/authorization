@@ -16,6 +16,7 @@ export class UpdateUserDto {
 	@Validate(IsPasswordMatching)
 	passwordRepeat?: string;
 
+	@IsOptional()
 	@IsBoolean()
-	isTwoFactorEnable: boolean;
+	isTwoFactorEnable?: boolean;
 }
