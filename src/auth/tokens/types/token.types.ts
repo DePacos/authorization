@@ -4,5 +4,5 @@ export type SaveTokenData = {
 	token: string;
 	tokenType: Tokens;
 	tokenJti: string;
-	tokenExpires: number;
+	tokenTtl: number;
 };

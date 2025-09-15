@@ -1,9 +1,11 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Tokens } from '@prisma/__generated__';
 import { Response } from 'express';
 
+import { ConfirmationResponseDto } from '@/auth/dto/confirmation-response.dto';
 import { EmailConfirmationDto } from '@/auth/dto/email-confirmation.dto';
+import { SentMailResponseDto } from '@/auth/dto/sent-mail-response.dto';
 import { TokensService } from '@/auth/tokens/tokens.service';
 import { EMAIL_SUBJECT } from '@/constants/app.constant';
 import { ROUTS_PATH } from '@/constants/routes.constant';
@@ -20,23 +22,23 @@ export class EmailConfirmationService {
 		private readonly mailService: MailService,
 	) {}
 
-	public async sendLinkEmailConfirmation(userId: string, email: string) {
+	public async sendLinkEmailConfirmation(userId: string, email: string): Promise<SentMailResponseDto> {
 		const BASE_URL = this.configService.get<string>('APPLICATION_URL');
-		const { verifier, verifierJti, verifierTtl } = this.tokenService.getVerifyToken();
+		const { verifierToken, verifierJti, verifierTtl } = this.tokenService.getVerifyToken();
 
 		await this.tokenService.saveToken(userId, email, {
-			token: verifier,
+			token: verifierToken,
 			tokenJti: verifierJti,
 			tokenType: Tokens.VERIFICATION,
 			tokenTtl: verifierTtl,
 		});
 
-		const link = `${BASE_URL + '/' + ROUTS_PATH.AUTH.ROOT + '/' + ROUTS_PATH.AUTH.EMAIL_CONFIRMATION}?token=${verifier}.${verifierJti}`;
+		const link = `${BASE_URL + '/' + ROUTS_PATH.AUTH.ROOT + '/' + ROUTS_PATH.AUTH.EMAIL_CONFIRMATION}?token=${verifierToken}.${verifierJti}`;
 
 		return await this.mailService.sendMailEmailConfirmation(email, EMAIL_SUBJECT.EMAIL_CONFIRMATION, link);
 	}
 
-	public async emailConfirmation(data: EmailConfirmationDto, res: Response) {
+	public async emailConfirmation(data: EmailConfirmationDto, res: Response): Promise<ConfirmationResponseDto> {
 		const { foundToken } = await this.tokenService.verifyConfirmationToken(data.token, Tokens.VERIFICATION, true);
 		await this.tokenService.removeToken(foundToken.jti);
 		await this.userService.verifyUser(foundToken.userId);
@@ -56,10 +58,12 @@ export class EmailConfirmationService {
 			path: '/auth/update',
 			sameSite: 'lax',
 		});
+
+		return { success: true };
 	}
 
-	public async resendLinkEmailConfirmation(data: EmailConfirmationDto) {
+	public async resendLinkEmailConfirmation(data: EmailConfirmationDto): Promise<SentMailResponseDto> {
 		const { foundToken } = await this.tokenService.verifyConfirmationToken(data.token, Tokens.VERIFICATION);
-		await this.sendLinkEmailConfirmation(foundToken.userId, foundToken.email);
+		return await this.sendLinkEmailConfirmation(foundToken.userId, foundToken.email);
 	}
 }
