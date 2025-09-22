@@ -1,12 +1,9 @@
 import { AuthProvider } from '@prisma/__generated__';
 
 export const ROLES_KEY = 'roles';
+export const REFRESH_TOKEN = 'refreshToken';
 
 export const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\/-]).{6,}$/;
-
-export const ROUTES = {
-	PROVIDER_CALLBACK: '/auth/oauth/callback/',
-} as const;
 
 export const ENCRYPTION_ALG = {
 	DIR: 'dir',
@@ -31,3 +28,9 @@ export const YANDEX_PROVIDER = {
 	accessUrl: 'https://oauth.yandex.ru/token',
 	profileUrl: 'https://login.yandex.ru/info?format=json',
 } as const;
+
+export const EMAIL_SUBJECT = {
+	EMAIL_CONFIRMATION: 'Email confirmation',
+	PASSWORD_RECOVERY: 'Password recovery',
+	TWO_FACTOR_AUTH: 'Two factor authorization',
+};

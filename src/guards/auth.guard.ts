@@ -1,4 +1,4 @@
-import { BadRequestException, CanActivate, ExecutionContext, Injectable, NotFoundException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { Request } from 'express';
 
 import { TokensService } from '@/auth/tokens/tokens.service';
@@ -14,14 +14,15 @@ export class AuthGuard implements CanActivate {
 	public async canActivate(context: ExecutionContext): Promise<boolean> {
 		const request: Request = context.switchToHttp().getRequest();
 
-		const token = request.headers.authorization?.startsWith('Bearer ') && request.headers.authorization.slice(7);
-		if (!token) throw new BadRequestException('token not found');
+		const accessToken = request.headers.authorization?.startsWith('Bearer ') && request.headers.authorization.slice(7);
+		if (!accessToken) throw new UnauthorizedException('Token invalid');
 
-		const { userId } = await this.tokenService.verifyAccessToken(token);
-		const user = await this.userService.getUserById(userId as string);
-		if (!user) throw new NotFoundException('user not found');
+		const { userId, refreshTokenUuid } = await this.tokenService.verifyAccessToken(accessToken);
+		const user = await this.userService.getUserById(userId);
+		if (!user) throw new NotFoundException('User not found');
 
 		request.user = user;
+		request.tokenUuid = refreshTokenUuid;
 
 		return true;
 	}
