@@ -24,29 +24,40 @@ export class EmailConfirmationService {
 
 	public async sendLinkEmailConfirmation(userId: string, email: string): Promise<SentMailResponseDto> {
 		const BASE_URL = this.configService.get<string>('APPLICATION_URL');
-		const { verifierToken, verifierJti, verifierTtl } = this.tokenService.getVerifyToken();
 
-		await this.tokenService.saveToken(userId, email, {
+		const foundTokenRow = await this.tokenService.getTokenByUserIdTokenType(userId, 'VERIFICATION');
+		if (foundTokenRow) await this.tokenService.removeToken(foundTokenRow.tokenUuid);
+
+		const { verifierToken, verifierTokenUuid, verifierTtl } = this.tokenService.getVerifyToken();
+
+		await this.tokenService.saveToken({
+			userId,
+			email,
 			token: verifierToken,
-			tokenJti: verifierJti,
+			tokenUuid: verifierTokenUuid,
 			tokenType: Tokens.VERIFICATION,
 			tokenTtl: verifierTtl,
 		});
 
-		const link = `${BASE_URL + '/' + ROUTS_PATH.AUTH.ROOT + '/' + ROUTS_PATH.AUTH.EMAIL_CONFIRMATION}?token=${verifierToken}.${verifierJti}`;
+		const link = `${BASE_URL + '/' + ROUTS_PATH.AUTH.ROOT + '/' + ROUTS_PATH.AUTH.EMAIL_CONFIRMATION}?token=${verifierToken}.${verifierTokenUuid}`;
 
 		return await this.mailService.sendMailEmailConfirmation(email, EMAIL_SUBJECT.EMAIL_CONFIRMATION, link);
 	}
 
 	public async emailConfirmation(data: EmailConfirmationDto, res: Response): Promise<ConfirmationResponseDto> {
-		const { foundToken } = await this.tokenService.verifyConfirmationToken(data.token, Tokens.VERIFICATION, true);
-		await this.tokenService.removeToken(foundToken.jti);
-		await this.userService.verifyUser(foundToken.userId);
+		const { foundTokenRow } = await this.tokenService.verifyConfirmationToken(data.token, true);
+		await this.tokenService.removeToken(foundTokenRow.tokenUuid);
+		await this.userService.verifyUser(foundTokenRow.userId);
 
-		const { refreshToken, refreshJti, refreshTtl } = await this.tokenService.getRefreshTokens(foundToken.userId);
-		await this.tokenService.saveToken(foundToken.userId, foundToken.email, {
+		const { refreshToken, refreshTokenUuid, refreshTtl } = await this.tokenService.getRefreshTokens(
+			foundTokenRow.userId,
+		);
+
+		await this.tokenService.saveToken({
+			userId: foundTokenRow.userId,
+			email: foundTokenRow.email,
 			token: refreshToken,
-			tokenJti: refreshJti,
+			tokenUuid: refreshTokenUuid,
 			tokenType: Tokens.REFRESH,
 			tokenTtl: refreshTtl,
 		});
@@ -55,7 +66,7 @@ export class EmailConfirmationService {
 			httpOnly: true,
 			secure: !IS_DEV_ENV,
 			maxAge: refreshTtl,
-			path: '/auth/update',
+			path: '/' + ROUTS_PATH.AUTH.ROOT + '/' + ROUTS_PATH.AUTH.UPDATE_TOKEN,
 			sameSite: 'lax',
 		});
 
@@ -63,7 +74,7 @@ export class EmailConfirmationService {
 	}
 
 	public async resendLinkEmailConfirmation(data: EmailConfirmationDto): Promise<SentMailResponseDto> {
-		const { foundToken } = await this.tokenService.verifyConfirmationToken(data.token, Tokens.VERIFICATION);
-		return await this.sendLinkEmailConfirmation(foundToken.userId, foundToken.email);
+		const { foundTokenRow } = await this.tokenService.verifyConfirmationToken(data.token);
+		return await this.sendLinkEmailConfirmation(foundTokenRow.userId, foundTokenRow.email);
 	}
 }
