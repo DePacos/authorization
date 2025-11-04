@@ -1,8 +1,6 @@
-import { OAuthService } from '@/auth/provider/services/oauth.service';
-import { OAuthResponse } from '@/auth/provider/types/oauth-response.types';
-import { ProviderOptions } from '@/auth/provider/types/provider-options.types';
-import { UserInfo } from '@/auth/provider/types/user-info.types';
-import { YANDEX_PROVIDER } from '@/constants/app.constant';
+import { OAuthService } from '@/auth/provider/services';
+import { OAuthResponse, ProviderOptions, UserInfo } from '@/auth/provider/types';
+import { YANDEX_PROVIDER } from '@/constants';
 
 export class YandexService extends OAuthService {
 	public constructor(options: ProviderOptions) {

@@ -1,7 +1,6 @@
 import { Validate } from 'class-validator';
 
-import { IsPasswordMatching } from '@/decorators/password.matching.decorator';
-import { IsValidEmail, IsValidName, IsValidPassword } from '@/decorators/validation.decorator';
+import { IsPasswordMatching, IsValidEmail, IsValidName, IsValidPassword } from '@/decorators';
 
 export class RegisterDto {
 	@IsValidName()

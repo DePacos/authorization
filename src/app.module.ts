@@ -4,7 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from '@/auth/auth.module';
 import { MailModule } from '@/mail/mail.module';
 import { UserModule } from '@/user/user.module';
-import { IS_DEV_ENV } from '@/utils/is-dev.utils';
+import { IS_DEV_ENV } from '@/utils';
 
 @Module({
 	imports: [

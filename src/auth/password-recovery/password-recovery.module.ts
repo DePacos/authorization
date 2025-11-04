@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 
 import { PasswordRecoveryController } from '@/auth/password-recovery/password-recovery.controller';
 import { PasswordRecoveryService } from '@/auth/password-recovery/password-recovery.service';
-import { TokensService } from '@/auth/tokens/tokens.service';
-import { MailService } from '@/mail/mail.service';
-import { PrismaService } from '@/prisma/prisma.service';
-import { UserService } from '@/user/user.service';
+import { TokensService } from '@/auth/tokens';
+import { MailService } from '@/mail';
+import { PrismaService } from '@/prisma';
+import { UserService } from '@/user';
 
 @Module({
 	controllers: [PasswordRecoveryController],

@@ -1,7 +1,6 @@
 import { Validate } from 'class-validator';
 
-import { IsPasswordMatching } from '@/decorators/password.matching.decorator';
-import { IsValidEmail, IsValidPassword, IsValidToken } from '@/decorators/validation.decorator';
+import { IsPasswordMatching, IsValidEmail, IsValidPassword, IsValidToken } from '@/decorators';
 
 export class PasswordRecoveryEmailDto {
 	@IsValidEmail()

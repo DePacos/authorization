@@ -4,8 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import * as cookieParser from 'cookie-parser';
 import * as session from 'express-session';
 
-import { getCorsConfig } from '@/configs/cors.config';
-import { getSessionConfig } from '@/configs/session.config';
+import { getCorsConfig, getSessionConfig } from '@/configs';
 
 import { AppModule } from './app.module';
 

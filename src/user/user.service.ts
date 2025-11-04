@@ -2,10 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { AuthProvider } from '@prisma/__generated__';
 import * as argon2 from 'argon2';
 
-import { RegisterDto } from '@/auth/dto/register.dto';
-import { UserInfo } from '@/auth/provider/types/user-info.types';
-import { PrismaService } from '@/prisma/prisma.service';
-import { UpdateUserDto } from '@/user/dto/update-user.dto';
+import { RegisterDto } from '@/auth/dto';
+import { UserInfo } from '@/auth/provider/types/';
+import { PrismaService } from '@/prisma';
+import { UpdateUserDto } from '@/user/dto';
 
 @Injectable()
 export class UserService {

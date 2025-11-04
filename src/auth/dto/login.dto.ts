@@ -1,4 +1,4 @@
-import { IsValidEmail, IsValidPassword } from '@/decorators/validation.decorator';
+import { IsValidEmail, IsValidPassword } from '@/decorators';
 
 export class LoginDto {
 	@IsValidEmail()

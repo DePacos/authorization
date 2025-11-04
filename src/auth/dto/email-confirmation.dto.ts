@@ -1,4 +1,4 @@
-import { IsValidToken } from '@/decorators/validation.decorator';
+import { IsValidToken } from '@/decorators';
 
 export class EmailConfirmationDto {
 	@IsValidToken()

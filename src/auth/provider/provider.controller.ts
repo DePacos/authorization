@@ -1,8 +1,8 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 
-import { ProviderService } from '@/auth/provider/provider.service';
-import { PARAM, ROUTS_PATH } from '@/constants/routes.constant';
-import { AuthProviderGuard } from '@/guards/auth-provider.guard';
+import { ProviderService } from '@/auth/provider';
+import { PARAM, ROUTS_PATH } from '@/constants';
+import { AuthProviderGuard } from '@/guards';
 
 @Controller(ROUTS_PATH.AUTH.PROVIDER_CONNECT)
 export class ProviderController {

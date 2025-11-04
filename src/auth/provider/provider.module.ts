@@ -1,14 +1,14 @@
 import { DynamicModule, Module } from '@nestjs/common';
 
-import { AuthService } from '@/auth/auth.service';
-import { EmailConfirmationService } from '@/auth/email-confirmation/email-confirmation.service';
-import { ProviderController } from '@/auth/provider/provider.controller';
-import { ProviderService } from '@/auth/provider/provider.service';
-import { AsyncOptions, Options, ProviderOptionsSymbol } from '@/auth/provider/types/provider-options.types';
-import { TokensService } from '@/auth/tokens/tokens.service';
-import { MailService } from '@/mail/mail.service';
-import { PrismaService } from '@/prisma/prisma.service';
-import { UserService } from '@/user/user.service';
+import { AuthService } from '@/auth';
+import { EmailConfirmationService } from '@/auth/email-confirmation';
+import { ProviderController, ProviderService } from '@/auth/provider';
+import { AsyncOptions, Options, ProviderOptionsSymbol } from '@/auth/provider/types';
+import { TokensService } from '@/auth/tokens';
+import { TwoFactorAuthService } from '@/auth/two-factor-auth';
+import { MailService } from '@/mail';
+import { PrismaService } from '@/prisma';
+import { UserService } from '@/user';
 
 @Module({})
 export class ProviderModule {
@@ -44,6 +44,7 @@ export class ProviderModule {
 				AuthService,
 				TokensService,
 				EmailConfirmationService,
+				TwoFactorAuthService,
 				MailService,
 			],
 			exports: [ProviderService],

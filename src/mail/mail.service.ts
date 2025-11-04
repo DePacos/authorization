@@ -3,10 +3,8 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { render } from '@react-email/components';
 
-import { SentMailResponseDto } from '@/auth/dto/sent-mail-response.dto';
-import { ConfirmationTemplate } from '@/mail/templates/confirmation.template';
-import { PasswordRecoveryTemplate } from '@/mail/templates/password-recovery.template';
-import { TwoFactorAuthentication } from '@/mail/templates/two-factor-auth.template';
+import { SentMailResponseDto } from '@/auth/dto';
+import { ConfirmationTemplate, PasswordRecoveryTemplate, TwoFactorAuthentication } from '@/mail/templates';
 
 @Injectable()
 export class MailService {

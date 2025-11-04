@@ -1,15 +1,15 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { Recaptcha } from '@nestlab/google-recaptcha';
 
-import { ConfirmationResponseDto } from '@/auth/dto/confirmation-response.dto';
 import {
+	ConfirmationResponseDto,
 	PasswordRecoveryEmailDto,
 	PasswordRecoveryPasswordDto,
 	PasswordRecoveryTokenDto,
-} from '@/auth/dto/password-recovery.dto';
-import { SentMailResponseDto } from '@/auth/dto/sent-mail-response.dto';
+	SentMailResponseDto,
+} from '@/auth/dto';
 import { PasswordRecoveryService } from '@/auth/password-recovery/password-recovery.service';
-import { ROUTS_PATH } from '@/constants/routes.constant';
+import { ROUTS_PATH } from '@/constants';
 
 @Controller(ROUTS_PATH.AUTH.ROOT)
 export class PasswordRecoveryController {

@@ -2,9 +2,9 @@ import { Body, Controller, HttpCode, HttpStatus, Post, Res } from '@nestjs/commo
 import { Recaptcha } from '@nestlab/google-recaptcha';
 import { Response } from 'express';
 
-import { TwoFactorAuthDto } from '@/auth/dto/two-factor-auth.dto';
+import { TwoFactorAuthDto } from '@/auth/dto';
 import { TwoFactorAuthService } from '@/auth/two-factor-auth/two-factor-auth.service';
-import { ROUTS_PATH } from '@/constants/routes.constant';
+import { ROUTS_PATH } from '@/constants';
 
 @Controller(ROUTS_PATH.AUTH.ROOT)
 export class TwoFactorAuthController {

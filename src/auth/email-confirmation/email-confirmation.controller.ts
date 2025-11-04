@@ -1,11 +1,9 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, Res } from '@nestjs/common';
 import { Response } from 'express';
 
-import { ConfirmationResponseDto } from '@/auth/dto/confirmation-response.dto';
-import { EmailConfirmationDto } from '@/auth/dto/email-confirmation.dto';
-import { SentMailResponseDto } from '@/auth/dto/sent-mail-response.dto';
+import { ConfirmationResponseDto, EmailConfirmationDto, SentMailResponseDto } from '@/auth/dto';
 import { EmailConfirmationService } from '@/auth/email-confirmation/email-confirmation.service';
-import { ROUTS_PATH } from '@/constants/routes.constant';
+import { ROUTS_PATH } from '@/constants';
 
 @Controller(ROUTS_PATH.AUTH.ROOT)
 export class EmailConfirmationController {

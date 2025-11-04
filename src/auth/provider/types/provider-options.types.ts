@@ -1,6 +1,6 @@
 import { FactoryProvider, ModuleMetadata } from '@nestjs/common';
 
-import { OAuthService } from '@/auth/provider/services/oauth.service';
+import { OAuthService } from '@/auth/provider/services';
 
 export type ProviderOptions = {
 	scopes: string[];

@@ -1,13 +1,9 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { EncryptJWT, jwtDecrypt } from 'jose';
 
-import { OAuthResponse } from '@/auth/provider/types/oauth-response.types';
-import { UserInfo } from '@/auth/provider/types/user-info.types';
-import { TokensService } from '@/auth/tokens/tokens.service';
-import { ENCRYPTION_ALG } from '@/constants/app.constant';
-import { ROUTS_PATH } from '@/constants/routes.constant';
-
-import { Provider } from '../types/provider.types';
+import { OAuthResponse, Provider, UserInfo } from '@/auth/provider/types';
+import { TokensService } from '@/auth/tokens';
+import { ENCRYPTION_ALG, ROUTS_PATH } from '@/constants';
 
 @Injectable()
 export class OAuthService {

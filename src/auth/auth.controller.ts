@@ -4,18 +4,17 @@ import { User } from '@prisma/__generated__';
 import { Response } from 'express';
 
 import { AuthService } from '@/auth/auth.service';
-import { LoginResponseDto } from '@/auth/dto/login-response.dto';
-import { LoginDto } from '@/auth/dto/login.dto';
-import { MeResponseDto } from '@/auth/dto/me-response.dto';
-import { RegisterDto } from '@/auth/dto/register.dto';
-import { SentMailResponseDto } from '@/auth/dto/sent-mail-response.dto';
-import { UpdateResponseDto } from '@/auth/dto/update-response.dto';
-import { ROUTS_PATH } from '@/constants/routes.constant';
-import { Authorization } from '@/decorators/auth.decorator';
-import { Authorized } from '@/decorators/authorized.decorator';
-import { Logout } from '@/decorators/logout.decorator';
-import { UpdateToken } from '@/decorators/update-token.decorator';
-import { UpdateTokenGuard } from '@/guards/update-token.guard';
+import {
+	LoginDto,
+	LoginResponseDto,
+	MeResponseDto,
+	RegisterDto,
+	SentMailResponseDto,
+	UpdateResponseDto,
+} from '@/auth/dto';
+import { ROUTS_PATH } from '@/constants';
+import { Authorization, Authorized, Logout, UpdateToken } from '@/decorators';
+import { UpdateTokenGuard } from '@/guards';
 
 @Controller(ROUTS_PATH.AUTH.ROOT)
 export class AuthController {
