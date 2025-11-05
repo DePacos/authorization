@@ -22,7 +22,7 @@ export class UpdateTokenGuard implements CanActivate {
 		if (!user) throw new NotFoundException('User not found');
 
 		request.user = user;
-		request.tokenUuid = foundTokenRow.tokenUuid;
+		request.tokenId = foundTokenRow.id;
 
 		return true;
 	}

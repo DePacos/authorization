@@ -17,12 +17,12 @@ export class AuthGuard implements CanActivate {
 		const accessToken = request.headers.authorization?.startsWith('Bearer ') && request.headers.authorization.slice(7);
 		if (!accessToken) throw new UnauthorizedException('Token invalid');
 
-		const { userId, refreshTokenUuid } = await this.tokenService.verifyAccessToken(accessToken);
+		const { userId, refreshTokenId } = await this.tokenService.verifyAccessToken(accessToken);
 		const user = await this.userService.getUserById(userId);
 		if (!user) throw new NotFoundException('User not found');
 
 		request.user = user;
-		request.tokenUuid = refreshTokenUuid;
+		request.tokenId = refreshTokenId;
 
 		return true;
 	}

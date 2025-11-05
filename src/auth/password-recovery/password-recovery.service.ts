@@ -2,18 +2,17 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Tokens } from '@prisma/__generated__';
 
-import { ConfirmationResponseDto } from '@/auth/dto/confirmation-response.dto';
 import {
+	ConfirmationResponseDto,
 	PasswordRecoveryEmailDto,
 	PasswordRecoveryPasswordDto,
 	PasswordRecoveryTokenDto,
-} from '@/auth/dto/password-recovery.dto';
-import { SentMailResponseDto } from '@/auth/dto/sent-mail-response.dto';
-import { TokensService } from '@/auth/tokens/tokens.service';
-import { EMAIL_SUBJECT } from '@/constants/app.constant';
-import { ROUTS_PATH } from '@/constants/routes.constant';
-import { MailService } from '@/mail/mail.service';
-import { UserService } from '@/user/user.service';
+	SentMailResponseDto,
+} from '@/auth/dto';
+import { TokensService } from '@/auth/tokens';
+import { EMAIL_SUBJECT, ROUTS_PATH } from '@/constants';
+import { MailService } from '@/mail';
+import { UserService } from '@/user';
 
 @Injectable()
 export class PasswordRecoveryService {
@@ -29,32 +28,38 @@ export class PasswordRecoveryService {
 		if (!user) throw new NotFoundException('User not found');
 
 		const BASE_URL = this.configService.get<string>('APPLICATION_URL');
-		const { verifierToken, verifierJti, verifierTtl } = this.tokenService.getVerifyToken();
 
-		await this.tokenService.saveToken(user.id, user.email, {
+		const foundTokenRow = await this.tokenService.getTokenByUserIdTokenType(user.id, 'PASSWORD_RESET');
+		if (foundTokenRow) await this.tokenService.removeToken(foundTokenRow.id);
+
+		const { verifierToken, verifierTokenId, verifierTtl } = this.tokenService.getVerifyToken();
+
+		await this.tokenService.saveToken({
+			id: verifierTokenId,
+			userId: user.id,
+			email: user.email,
 			token: verifierToken,
-			tokenJti: verifierJti,
 			tokenType: Tokens.PASSWORD_RESET,
 			tokenTtl: verifierTtl,
 		});
 
-		const link = `${BASE_URL + '/' + ROUTS_PATH.AUTH.ROOT + '/' + ROUTS_PATH.AUTH.PASSWORD_RECOVERY}?token=${verifierToken}.${verifierJti}`;
+		const link = `${BASE_URL + '/' + ROUTS_PATH.AUTH.ROOT + '/' + ROUTS_PATH.AUTH.PASSWORD_RECOVERY}?token=${verifierToken}.${verifierTokenId}`;
 
 		return await this.mailService.sendMailPasswordRecovery(user.email, EMAIL_SUBJECT.PASSWORD_RECOVERY, link);
 	}
 
 	public async passwordRecovery(data: PasswordRecoveryPasswordDto): Promise<ConfirmationResponseDto> {
-		const { foundToken } = await this.tokenService.verifyConfirmationToken(data.token, Tokens.PASSWORD_RESET, true);
+		const { foundTokenRow } = await this.tokenService.verifyConfirmationToken(data.token, true);
 
-		await this.tokenService.removeToken(foundToken.jti);
-		await this.userService.changePassword(foundToken.userId, data.password);
+		await this.tokenService.removeToken(foundTokenRow.id);
+		await this.userService.changePassword(foundTokenRow.userId, data.password);
 
 		return { success: true };
 	}
 
 	public async resendPasswordRecoveryLink(data: PasswordRecoveryTokenDto): Promise<SentMailResponseDto> {
-		const { foundToken } = await this.tokenService.verifyConfirmationToken(data.token, Tokens.PASSWORD_RESET);
+		const { foundTokenRow } = await this.tokenService.verifyConfirmationToken(data.token);
 
-		return await this.sendPasswordRecoveryLink({ email: foundToken.email });
+		return await this.sendPasswordRecoveryLink({ email: foundTokenRow.email });
 	}
 }

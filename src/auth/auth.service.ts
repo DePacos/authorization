@@ -4,18 +4,13 @@ import * as argon2 from 'argon2';
 import { Response } from 'express';
 import { randomUUID } from 'node:crypto';
 
-import { LoginResponseDto } from '@/auth/dto/login-response.dto';
-import { LoginDto } from '@/auth/dto/login.dto';
-import { RegisterDto } from '@/auth/dto/register.dto';
-import { SentMailResponseDto } from '@/auth/dto/sent-mail-response.dto';
-import { UpdateResponseDto } from '@/auth/dto/update-response.dto';
-import { EmailConfirmationService } from '@/auth/email-confirmation/email-confirmation.service';
-import { TokensService } from '@/auth/tokens/tokens.service';
-import { TwoFactorAuthService } from '@/auth/two-factor-auth/two-factor-auth.service';
-import { REFRESH_TOKEN } from '@/constants/app.constant';
-import { ROUTS_PATH } from '@/constants/routes.constant';
-import { UserService } from '@/user/user.service';
-import { IS_DEV_ENV } from '@/utils/is-dev.utils';
+import { LoginDto, LoginResponseDto, RegisterDto, SentMailResponseDto, UpdateResponseDto } from '@/auth/dto';
+import { EmailConfirmationService } from '@/auth/email-confirmation';
+import { TokensService } from '@/auth/tokens';
+import { TwoFactorAuthService } from '@/auth/two-factor-auth';
+import { REFRESH_TOKEN, ROUTS_PATH } from '@/constants';
+import { UserService } from '@/user';
+import { IS_DEV_ENV } from '@/utils';
 
 @Injectable()
 export class AuthService {
@@ -53,10 +48,10 @@ export class AuthService {
 		}
 
 		if (user.isTwoFactorEnable) {
-			const tokenUuid = randomUUID();
-			const { sentMessage } = await this.twoFactorAuthService.sendMailTwoFactorAuth(user.id, user.email, tokenUuid);
+			const tokenId = randomUUID();
+			const { sentMessage } = await this.twoFactorAuthService.sendMailTwoFactorAuth(user.id, user.email, tokenId);
 
-			return { sentMessage, tokenUuid };
+			return sentMessage ? { tokenId, sentMessage } : { sentMessage };
 		}
 
 		return await this.getAuthTokens(user, res);
@@ -79,18 +74,18 @@ export class AuthService {
 	}
 
 	public async getAuthTokens(user: User, res: Response) {
-		const { refreshToken, refreshTokenUuid, refreshTtl } = await this.tokenService.getRefreshTokens(user.id);
-		const { accessToken } = await this.tokenService.getAccessToken(user.id, refreshTokenUuid);
+		const { refreshToken, refreshTokenId, refreshTtl } = await this.tokenService.getRefreshTokens(user.id);
+		const { accessToken } = await this.tokenService.getAccessToken(user.id, refreshTokenId);
 
 		const foundTokenRow = await this.tokenService.getTokenByUserIdTokenType(user.id, 'REFRESH');
-		if (foundTokenRow) await this.tokenService.removeToken(foundTokenRow.tokenUuid);
+		if (foundTokenRow) await this.tokenService.removeToken(foundTokenRow.id);
 
 		await this.tokenService.saveToken({
+			id: refreshTokenId,
 			userId: user.id,
 			email: user.email,
 			token: refreshToken,
 			tokenType: Tokens.REFRESH,
-			tokenUuid: refreshTokenUuid,
 			tokenTtl: refreshTtl,
 		});
 

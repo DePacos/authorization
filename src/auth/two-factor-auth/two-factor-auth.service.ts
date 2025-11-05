@@ -2,13 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { Tokens } from '@prisma/__generated__';
 import { Response } from 'express';
 
-import { SentMailResponseDto } from '@/auth/dto/sent-mail-response.dto';
-import { TwoFactorAuthDto } from '@/auth/dto/two-factor-auth.dto';
-import { TokensService } from '@/auth/tokens/tokens.service';
-import { EMAIL_SUBJECT, REFRESH_TOKEN } from '@/constants/app.constant';
-import { ROUTS_PATH } from '@/constants/routes.constant';
-import { MailService } from '@/mail/mail.service';
-import { IS_DEV_ENV } from '@/utils/is-dev.utils';
+import { SentMailResponseDto, TwoFactorAuthDto } from '@/auth/dto';
+import { TokensService } from '@/auth/tokens';
+import { EMAIL_SUBJECT, REFRESH_TOKEN, ROUTS_PATH } from '@/constants';
+import { MailService } from '@/mail';
+import { IS_DEV_ENV } from '@/utils';
 
 @Injectable()
 export class TwoFactorAuthService {
@@ -17,38 +15,38 @@ export class TwoFactorAuthService {
 		private readonly mailService: MailService,
 	) {}
 
-	public async sendMailTwoFactorAuth(userId: string, email: string, tokenUuid: string): Promise<SentMailResponseDto> {
+	public async sendMailTwoFactorAuth(userId: string, email: string, tokenId: string): Promise<SentMailResponseDto> {
 		const { twoFactorToken, twoFactorTtl } = this.tokensService.getTwoFactorToken();
 
 		await this.tokensService.saveToken({
+			id: tokenId,
 			userId,
 			email,
 			token: twoFactorToken,
 			tokenType: Tokens.TWO_FACTOR,
 			tokenTtl: twoFactorTtl,
-			tokenUuid,
 		});
 
 		return await this.mailService.sendMailTwoFactorAuth(email, EMAIL_SUBJECT.TWO_FACTOR_AUTH, twoFactorToken);
 	}
 
 	public async twoFactorAuth(data: TwoFactorAuthDto, res: Response) {
-		const { foundTokenRow } = await this.tokensService.verifyToken(data.token, data.tokenUuid, true);
+		const { code, tokenId } = data;
+		const { foundTokenRow } = await this.tokensService.verifyToken(code, tokenId, true);
 
-		const foundRefreshTokenRow = await this.tokensService.getTokenByUserIdTokenType(foundTokenRow.userId, 'REFRESH');
-		if (foundRefreshTokenRow) await this.tokensService.removeToken(foundTokenRow.tokenUuid);
+		await this.tokensService.removeToken(foundTokenRow.id);
 
-		const { refreshToken, refreshTokenUuid, refreshTtl } = await this.tokensService.getRefreshTokens(
+		const { refreshToken, refreshTokenId, refreshTtl } = await this.tokensService.getRefreshTokens(
 			foundTokenRow.userId,
 		);
 
 		await this.tokensService.saveToken({
+			id: refreshTokenId,
 			userId: foundTokenRow.userId,
 			email: foundTokenRow.email,
 			token: refreshToken,
 			tokenType: Tokens.REFRESH,
 			tokenTtl: refreshTtl,
-			tokenUuid: refreshTokenUuid,
 		});
 
 		res.cookie(REFRESH_TOKEN, refreshToken, {

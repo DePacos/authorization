@@ -1,10 +1,9 @@
 import { BadRequestException, Inject, OnModuleInit } from '@nestjs/common';
 import { Tokens } from '@prisma/__generated__';
 
-import { Options, ProviderOptionsSymbol } from '@/auth/provider/types/provider-options.types';
-import { TokensService } from '@/auth/tokens/tokens.service';
-import { SaveTokenData } from '@/auth/tokens/types/token.types';
-import { UserService } from '@/user/user.service';
+import { Options, ProviderOptionsSymbol } from '@/auth/provider/types';
+import { TokensService } from '@/auth/tokens';
+import { UserService } from '@/user';
 
 export class ProviderService implements OnModuleInit {
 	public constructor(
@@ -47,17 +46,20 @@ export class ProviderService implements OnModuleInit {
 		if (foundUser && !account) await this.userService.createAccountByProvider(foundUser.id, providerInstance.name);
 		const user = foundUser ? foundUser : await this.userService.createUserByProvider(providerProfile);
 
-		const { accessToken } = await this.tokenService.getAccessToken(user.id);
-		const { refreshToken, refreshJti, refreshTtl } = await this.tokenService.getRefreshTokens(user.id);
+		const foundTokenRow = await this.tokenService.getTokenByUserIdTokenType(user.id, 'REFRESH');
+		if (foundTokenRow) await this.tokenService.removeToken(foundTokenRow.id);
 
-		const tokenData: SaveTokenData = {
+		const { refreshToken, refreshTokenId, refreshTtl } = await this.tokenService.getRefreshTokens(user.id);
+		const { accessToken } = await this.tokenService.getAccessToken(user.id, refreshTokenId);
+
+		await this.tokenService.saveToken({
+			id: refreshTokenId,
+			userId: user.id,
+			email: user.email,
 			token: refreshToken,
 			tokenType: Tokens.REFRESH,
-			tokenJti: refreshJti,
 			tokenTtl: refreshTtl,
-		};
-
-		await this.tokenService.saveToken(user.id, user.email, tokenData);
+		});
 
 		return { accessToken };
 	}

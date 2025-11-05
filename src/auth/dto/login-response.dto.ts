@@ -7,7 +7,7 @@ export class LoginResponseDto {
 
 	@IsString()
 	@IsOptional()
-	tokenUuid?: string;
+	tokenId?: string;
 
 	@IsBoolean()
 	@IsOptional()
