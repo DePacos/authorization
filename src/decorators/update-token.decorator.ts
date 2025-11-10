@@ -6,6 +6,6 @@ export const UpdateToken = createParamDecorator((_: unknown, context: ExecutionC
 
 	return {
 		user: request.user,
-		tokenUuid: request.tokenUuid,
+		tokenId: request.tokenId,
 	};
 });
