@@ -126,18 +126,12 @@ export class TokensService {
 
 		//todo make multiple input attempts
 
-		if (!foundTokenRow) {
-			await this.removeToken(tokenId);
-			throw new ConflictException('Token not found');
-		}
-		if (!(await argon2.verify(foundTokenRow.token, token))) {
-			await this.removeToken(tokenId);
-			throw new ConflictException('Token not verified');
-		}
-		if (isExpires && foundTokenRow.expiresAt < new Date()) {
-			await this.removeToken(tokenId);
-			throw new ConflictException('Token expired');
-		}
+		if (!foundTokenRow) throw new ConflictException('Token not found');
+
+		if (!(await argon2.verify(foundTokenRow.token, token))) throw new ConflictException('Token not verified');
+
+		if (isExpires && foundTokenRow.expiresAt < new Date())
+			throw new ConflictException({ message: 'Token expired', value: foundTokenRow.email });
 
 		return { foundTokenRow };
 	}
